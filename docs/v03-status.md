@@ -5,7 +5,7 @@
 
 | 阶段 | 已完成及证据 | 尚未验收 |
 | --- | --- | --- |
-| 0 基线与接入 | 原仓库已固定 SHA；本地回归通过；真实四表可只读查询，官方 MCP 客户端查询 H-001 且匿名详情被拒绝 | WorkBuddy 启动后退出，账号/Enterprise资格、新 Bot、企微会话隔离及sender透传未验证 |
+| 0 基线与接入 | 原仓库已固定 SHA；本地回归通过；真实四表可只读查询，官方 MCP 客户端查询 H-001 且匿名详情被拒绝；后续已恢复并验证WorkBuddy主界面，保存本机MCP配置 | 首次连接等待用户点击信任；账号/Enterprise资格、新 Bot、企微会话隔离及sender透传未验证 |
 | 1 工作人员层 | 独立工作人员 MCP、可信身份映射、作品范围隔离、共享 QueryService、规则发布快照、五项 Skill 草案 | WorkBuddy真实触发Skill、企微问答正确率、旧新入口双轨比较 |
 | 2 存储与恢复 | Registry/GitHub App Writer、幂等提交、持久化操作日志、启动及每60秒对账、故障重试；独立五表沙盒真实补登记/排班读回通过 | GitHub App安装与专用作品仓库未配置，GitHub实写及正式台账迁移未执行 |
 | 3 工单与DRI | 状态机、唯一负责人、接单/改派/证据结案、超时升级、审计/outbox；真实沙盒经MCP创建→接单→处理→解决→结案读回通过 | 默认无真实通知Provider，通知保持queued；真实投递及接收人回执、换班真人演练待完成 |
@@ -26,7 +26,7 @@
 
 ## 下一步实际接入条件
 
-1. WorkBuddy 能稳定打开，明确使用桌面受限PoC还是Enterprise，并用独立企微测试Bot验证会话和身份。
+1. WorkBuddy主界面现已确认可打开；本机MCP配置已保存，等待用户完成首次信任并执行真实Agent查询。随后明确桌面受限PoC还是Enterprise，并用独立企微测试Bot验证会话和身份。
 2. 本机环境配置 GitHub App ID、Installation ID、Private Key、专用作品仓库，以及云端可达的 MCP HTTPS 地址。
 3. 明确唯一赛事 Owner/Reviewer、通知Provider和回执语义，审批正式规则及Skill包。
 

@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('demo','mcp-walkthrough','selftest','serve','serve-staff','doctor-v03','reconcile','verify','live','connect-wecom','connect-model','provision-wecom')]
+    [ValidateSet('demo','mcp-walkthrough','selftest','serve','serve-staff','workbuddy-poc','doctor-v03','reconcile','verify','live','connect-wecom','connect-model','provision-wecom')]
     [string]$Mode = 'demo',
     [int]$Port = 8765
 )
@@ -8,6 +8,22 @@ Set-Location -LiteralPath $PSScriptRoot
 $arenaPriorPythonPath = $env:PYTHONPATH
 $arenaBootstrapPath = Join-Path $PSScriptRoot 'scripts/python_bootstrap'
 $env:PYTHONPATH = if ($arenaPriorPythonPath) { "$arenaBootstrapPath$([IO.Path]::PathSeparator)$arenaPriorPythonPath" } else { $arenaBootstrapPath }
+$arenaPocPriorEnvironment = @{}
+if ($Mode -eq 'workbuddy-poc') {
+    if (-not $PSBoundParameters.ContainsKey('Port')) { $Port = 8766 }
+    $arenaPocEnvironment = @{
+        ARENA_REGISTRY = 'smartsheet'
+        ARENA_WRITER = 'local'
+        ARENA_STAFF_WRITES_ENABLED = 'false'
+        ARENA_SMARTSHEET_WRITES_ENABLED = 'false'
+        ARENA_STAFF_CREDENTIALS = '[]'
+        ARENA_DATA_DIR = (Join-Path $PSScriptRoot '.arena/workbuddy-poc')
+    }
+    foreach ($arenaPocName in $arenaPocEnvironment.Keys) {
+        $arenaPocPriorEnvironment[$arenaPocName] = [Environment]::GetEnvironmentVariable($arenaPocName, 'Process')
+        [Environment]::SetEnvironmentVariable($arenaPocName, $arenaPocEnvironment[$arenaPocName], 'Process')
+    }
+}
 $taskWorkspace = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 if ((Split-Path (Split-Path $PSScriptRoot -Parent) -Leaf) -eq 'outputs') {
     $taskWorkDir = Join-Path $taskWorkspace 'work'
@@ -21,6 +37,7 @@ try { switch ($Mode) {
     'mcp-walkthrough' { & uv run --frozen python scripts/mcp_walkthrough.py }
     'serve' { & uv run --frozen arena serve --port $Port }
     'serve-staff' { & uv run --frozen arena serve-staff --port $Port }
+    'workbuddy-poc' { & uv run --frozen arena serve-staff --port $Port }
     'verify' {
         & uv run --frozen pytest -q
         if ($LASTEXITCODE -ne 0) { throw 'pytest failed' }
@@ -32,4 +49,9 @@ try { switch ($Mode) {
     default { & uv run --frozen arena $Mode }
 }
 if ($LASTEXITCODE -ne 0) { throw "Arena 命令失败，退出码 $LASTEXITCODE" }
-} finally { $env:PYTHONPATH = $arenaPriorPythonPath }
+} finally {
+    $env:PYTHONPATH = $arenaPriorPythonPath
+    foreach ($arenaPocName in $arenaPocPriorEnvironment.Keys) {
+        [Environment]::SetEnvironmentVariable($arenaPocName, $arenaPocPriorEnvironment[$arenaPocName], 'Process')
+    }
+}

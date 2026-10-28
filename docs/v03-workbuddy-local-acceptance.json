@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-28",
+  "state": "awaiting_user_mcp_trust",
+  "workbuddy_version_observed": "5.8.3",
+  "workbuddy_main_window": "visible_and_loaded",
+  "local_mcp_endpoint": "http://127.0.0.1:8766/mcp",
+  "server_health": "ok",
+  "registry": "real_wecom_test_table",
+  "staff_writes_enabled": false,
+  "smartsheet_writes_enabled": false,
+  "staff_credentials_configured": false,
+  "workbuddy_config_saved_via_ui": true,
+  "workbuddy_connection_state": "first_connection_trust_required",
+  "direct_official_mcp_client_query": "H-001_matched",
+  "direct_official_mcp_client_anonymous_detail": "denied",
+  "workbuddy_agent_tool_call": "not_run",
+  "wecom_message_channel": "not_tested",
+  "table_writes": 0,
+  "messages_sent": 0
+}
