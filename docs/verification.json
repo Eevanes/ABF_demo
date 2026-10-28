@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-28",
+  "version": "0.2.0",
+  "pytest": {
+    "passed": 30,
+    "seconds": 17.41,
+    "external_network": "blocked"
+  },
+  "ruff": "passed",
+  "mypy": {
+    "status": "passed",
+    "source_files": 14
+  },
+  "wecom": {
+    "identity_query": "passed",
+    "websocket": {
+      "state": "authenticated",
+      "messages_received": 1,
+      "messages_replied": 1,
+      "error": null,
+      "last_mode": "offline-scripted"
+    },
+    "single_chat_user_confirmed": true,
+    "live_feedback_readback": true,
+    "staff_role_acceptance": "pending"
+  },
+  "smartsheet": {
+    "state": {
+      "state": "ready",
+      "last_sync": "2026-10-28T06:55:50.428035+00:00",
+      "error": null,
+      "writes": 2
+    },
+    "fields": {
+      "works": 10,
+      "versions": 9,
+      "duty": 5,
+      "feedback": 11
+    },
+    "real_record_write_readback": "passed",
+    "real_alias_return": "passed",
+    "mode": "mirror; local SQLite/Git remains submission source"
+  },
+  "credential_storage": "local user environment variables only; no credential files created",
+  "model": {
+    "state": "waiting_for_user",
+    "live_model_test": "not_run"
+  },
+  "github_app_writer": "not_implemented",
+  "public_https": "not_configured",
+  "docker": {
+    "v02_build": "passed",
+    "v02_health_status": 200,
+    "v02_business_demo": "passed",
+    "temporary_container": "removed",
+    "v01_restart_count_after_process_kill": 1
+  },
+  "runtime": {
+    "mcp_url": "http://127.0.0.1:8765/mcp",
+    "model_setup_url": "http://127.0.0.1:18767",
+    "windows_autostart": "not_configured"
+  }
+}

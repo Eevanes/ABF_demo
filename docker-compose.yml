@@ -1,0 +1,13 @@
+services:
+  arena:
+    build: .
+    restart: always
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - arena-data:/data
+    environment:
+      ARENA_DATA_DIR: /data
+      SUBMISSION_DEADLINE: "${SUBMISSION_DEADLINE:-2026-12-31T23:59:59+08:00}"
+volumes:
+  arena-data:
