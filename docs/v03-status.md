@@ -5,8 +5,8 @@
 
 | 阶段 | 已完成及证据 | 尚未验收 |
 | --- | --- | --- |
-| 0 基线与接入 | 原仓库已固定 SHA；本地回归通过；真实四表可只读查询，官方 MCP 客户端查询 H-001 且匿名详情被拒绝；后续已恢复并验证WorkBuddy主界面，保存本机MCP配置 | 首次连接等待用户点击信任；账号/Enterprise资格、新 Bot、企微会话隔离及sender透传未验证 |
-| 1 工作人员层 | 独立工作人员 MCP、可信身份映射、作品范围隔离、共享 QueryService、规则发布快照、五项 Skill 草案 | WorkBuddy真实触发Skill、企微问答正确率、旧新入口双轨比较 |
+| 0 基线与接入 | 原仓库已固定 SHA；真实四表只读与官方 MCP 客户端验证通过；WorkBuddy主界面、用户首次信任、本机MCP连接及真实模型查询均通过 | 账号/Enterprise资格、新 Bot、企微会话隔离及sender透传未验证 |
+| 1 工作人员层 | 独立工作人员 MCP、可信身份映射、作品范围隔离、共享 QueryService、规则发布快照、五项 Skill 草案；WorkBuddy真实调用search_works返回H-001，get_work被匿名权限拒绝 | 五项Skill触发全面评估、企微问答正确率、旧新入口双轨比较 |
 | 2 存储与恢复 | Registry/GitHub App Writer、幂等提交、持久化操作日志、启动及每60秒对账、故障重试；独立五表沙盒真实补登记/排班读回通过 | GitHub App安装与专用作品仓库未配置，GitHub实写及正式台账迁移未执行 |
 | 3 工单与DRI | 状态机、唯一负责人、接单/改派/证据结案、超时升级、审计/outbox；真实沙盒经MCP创建→接单→处理→解决→结案读回通过 | 默认无真实通知Provider，通知保持queued；真实投递及接收人回执、换班真人演练待完成 |
 | 4 反馈与评估 | 反馈审查、改进草案、25题固定确定性服务评估、运行/回退手册、CI | 真实Agent评估、Owner/Reviewer审批发布、至少一次反馈改进发布回归、5–10人赛前演练和长期稳定性 |
@@ -18,6 +18,7 @@
 - `scripts/v03_readonly_probe.py`：旧测试表→真实localhost MCP，公开查询准确且匿名内部查询被拒绝。
 - [五表适配器真实沙盒报告](v03-cloud-acceptance.json)：登记故障补写、去重、排班直接修改读回、工单持久化。
 - [真实沙盒MCP工单报告](v03-cloud-mcp-acceptance.json)：独立临时测试身份完整状态流；无真实消息发送。
+- [WorkBuddy桌面本机联调报告](v03-workbuddy-local-acceptance.json)：Hy3真实模型通过arena-local查询山海队，返回H-001/RAG知识助手，内部详情被服务端权限拒绝；企微消息渠道仍未测试。
 - GitHub Writer 的 App Token、分支冲突、tag故障恢复仅通过Mock HTTP测试；没有把模拟SHA当作正式作品证据。
 
 首次基线30项测试出现过一次jieba加载MemoryError；后续隔离回归通过。启动器增加本进程WMI回退，未改系统设置。
@@ -26,7 +27,7 @@
 
 ## 下一步实际接入条件
 
-1. WorkBuddy主界面现已确认可打开；本机MCP配置已保存，等待用户完成首次信任并执行真实Agent查询。随后明确桌面受限PoC还是Enterprise，并用独立企微测试Bot验证会话和身份。
+1. WorkBuddy桌面本机只读MCP联调已通过；下一步明确桌面受限PoC还是Enterprise，并用独立企微测试Bot验证消息渠道、会话隔离和身份。
 2. 本机环境配置 GitHub App ID、Installation ID、Private Key、专用作品仓库，以及云端可达的 MCP HTTPS 地址。
 3. 明确唯一赛事 Owner/Reviewer、通知Provider和回执语义，审批正式规则及Skill包。
 

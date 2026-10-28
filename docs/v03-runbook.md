@@ -8,6 +8,8 @@
 
 ## WorkBuddy 只读 PoC
 
+本机快速启动：`./Run-Demo.ps1 -Mode workbuddy-poc`。保持服务终端运行，然后在WorkBuddy中打开已保存的 `arena-local`；当前真实模型查询及权限拒绝已通过，详见本机联调报告。
+
 1. 使用独立的 WorkBuddy-Arena 测试机器人；保留现有 test机器人及其服务。
 2. 本地设置 ARENA_REGISTRY=smartsheet，保持所有写开关关闭。
 3. `./Run-Demo.ps1 -Mode serve-staff -Port 8766`；WorkBuddy 使用 HTTP MCP `http://127.0.0.1:8766/mcp`。
