@@ -7,7 +7,8 @@
 提交幂等与重启恢复、工单/通知审计，以及 WorkBuddy 五项 Skill 和评估样例。
 
 当前交付与真实联调范围见 [v0.3 状态](docs/v03-status.md)，运行与回滚见 [v0.3 手册](docs/v03-runbook.md)。
-WorkBuddy 身份透传、企微渠道和 GitHub App 实写验收完成前保留旧入口；不能据本地测试宣布正式切换。
+完整搭建过程、ANC 功能映射与本项目的设计选择见 [搭建复盘](docs/anc-build-retrospective.md)。
+WorkBuddy 桌面及企微私聊公共只读链路已通过；身份透传、多人隔离、群 @ 和 GitHub App 实写仍待验收。旧代码保留受控回退，同一机器人不同时启动新旧接收端；不能据本机私聊宣布正式赛场全量切换。
 
 ```powershell
 .\Run-Demo.ps1 -Mode verify

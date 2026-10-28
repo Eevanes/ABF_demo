@@ -10,7 +10,7 @@
 
 本机快速启动：`./Run-Demo.ps1 -Mode workbuddy-poc`。保持服务终端运行，然后在WorkBuddy中打开已保存的 `arena-local`；当前真实模型查询及权限拒绝已通过，详见本机联调报告。
 
-1. 使用独立的 WorkBuddy-Arena 测试机器人；保留现有 test机器人及其服务。
+1. 本轮用户已明确授权WorkBuddy接管原test机器人，私聊只读闭环通过。保持原机器人资料和历史；不要再启动旧live接收端争用连接。其他环境可选独立测试机器人以保留原链路。
 2. 本地设置 ARENA_REGISTRY=smartsheet，保持所有写开关关闭。
 3. `./Run-Demo.ps1 -Mode serve-staff -Port 8766`；WorkBuddy 使用 HTTP MCP `http://127.0.0.1:8766/mcp`。
 4. 不设置 staff Bearer，调用 search_works 查询山海队，核对真实表中的 H-001。
