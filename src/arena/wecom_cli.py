@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -72,7 +73,7 @@ def save_setting(name: str, value: str) -> None:
     }
     if name not in allowed or not value:
         raise ValueError("配置项不允许或为空")
-    if os.name == "nt":
+    if sys.platform == "win32":
         import winreg
 
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
