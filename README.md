@@ -2,7 +2,7 @@
 
 Arena 将比赛中的作品提交、查询、规则答疑、值班协调和异常处理连接成一个可审计的运行层。工作人员通过企业微信与 WorkBuddy 交互；Arena MCP 负责权限判断、确定性业务校验、台账写入和工单状态，模型不能绕过服务端规则。
 
-当前版本：`0.3.0.dev1`。完整方案与系统设计见 [WorkBuddy 与 ANC 实施方案](https://app.notion.com/p/407a4d98cffb81229afdfcafdfa0010b) 和 [搭建复盘](docs/anc-build-retrospective.md)。
+当前版本：`0.3.0.dev1`。
 
 ## 当前状态
 
@@ -162,9 +162,6 @@ v0.2 已完成本机提交、版本、查询、规则答疑、值班和反馈的
 
 ## 来源
 
-- [ANC 概念调研](https://app.notion.com/p/406a4d98cffb80aca765c48f98108870)
-- [Arena 技术调研](https://app.notion.com/p/033a670eaaf64451ab1a18adf4536b26)
-- [初版搭建规格](https://app.notion.com/p/3945e01d2d8349609df852f82d43d4ef)
 - [ANC 开源项目](https://github.com/HA7CH/ai-native-company)
 - [企业微信官方 CLI](https://github.com/WecomTeam/wecom-cli)
 - [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
