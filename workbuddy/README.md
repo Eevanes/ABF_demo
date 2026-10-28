@@ -10,7 +10,7 @@
 
 挂载工单 backend 且 `ARENA_STAFF_WRITES_ENABLED=true` 后才提供受控工单写入；正式接入前验证会话隔离与真实身份。`list_feedback`/`list_tickets`/`propose_change`仅Admin可用，改进建议不等于发布。
 
-按以下顺序真机验收：专用测试Bot → 单聊及群@ → 只读MCP真实查表 → sender与会话隔离 → 独立身份受控操作 → 通知平台回执 → 重启恢复。沿用现有Bot只会导致长连接竞争，测试应使用专用机器人。
+按以下顺序真机验收：测试Bot接入 → 单聊及群@ → 只读MCP真实查表 → sender与会话隔离 → 独立身份受控操作 → 通知平台回执 → 重启恢复。独立测试Bot可保留原链路；若用户明确选择沿用现有Bot，应确认原接收服务已停止，避免长连接竞争。本轮用户选择由WorkBuddy接管原`test机器人`，当前只测私聊，不向原ABF群发送测试消息。
 
 `python evals/run.py` 的结果是确定性服务评估，未调用WorkBuddy或真实模型。Skill实际触发、回复引用与角色隔离仍需用同一cases进行真实Agent复测。Skill发布需记录版本、Git commit、审批人、发布时间和回滚点。
 

@@ -1,6 +1,6 @@
 {
   "date": "2026-10-28",
-  "state": "desktop_model_mcp_readonly_passed",
+  "state": "desktop_and_wecom_private_chat_mcp_readonly_passed",
   "workbuddy_version_observed": "5.8.3",
   "workbuddy_main_window": "visible_and_loaded",
   "local_mcp_endpoint": "http://127.0.0.1:8766/mcp",
@@ -19,7 +19,9 @@
   "workbuddy_detail_result": "需要独立认证的工作人员身份",
   "workbuddy_conversation_title": "Arena 只读联调查询山海队作品权限",
   "server_call_observed_at": ["2026-10-28T20:09:12+08:00", "2026-10-28T20:09:18+08:00"],
-  "wecom_message_channel": "not_tested",
+  "wecom_message_channel": "private_chat_readonly_roundtrip_passed",
+  "wecom_acceptance_report": "v03-wecom-acceptance.json",
+  "wecom_test_messages_sent_by_user": 1,
   "table_writes": 0,
-  "messages_sent": 0
+  "messages_sent_by_agent": 0
 }
