@@ -1,174 +1,171 @@
-# Arena · ANC 比赛运行层 demo
+# Arena · ANC 比赛运行层 Demo
 
-## v0.3 迭代
+Arena 将比赛中的作品提交、查询、规则答疑、值班协调和异常处理连接成一个可审计的运行层。工作人员通过企业微信与 WorkBuddy 交互；Arena MCP 负责权限判断、确定性业务校验、台账写入和工单状态，模型不能绕过服务端规则。
 
-按 [WorkBuddy 与 ANC 实施方案](https://app.notion.com/p/407a4d98cffb81229afdfcafdfa0010b) 增量迁移。
-新增独立工作人员 MCP、可信查询服务、发布版规则过滤、智能表格 Registry、GitHub App 写入器、
-提交幂等与重启恢复、工单/通知审计，以及 WorkBuddy 五项 Skill 和评估样例。
+当前版本：`0.3.0.dev1`。完整方案与系统设计见 [WorkBuddy 与 ANC 实施方案](https://app.notion.com/p/407a4d98cffb81229afdfcafdfa0010b) 和 [搭建复盘](docs/anc-build-retrospective.md)。
 
-当前交付与真实联调范围见 [v0.3 状态](docs/v03-status.md)，运行与回滚见 [v0.3 手册](docs/v03-runbook.md)。
-完整搭建过程、ANC 功能映射与本项目的设计选择见 [搭建复盘](docs/anc-build-retrospective.md)。
-WorkBuddy 桌面及企微私聊公共只读链路已通过；身份透传、多人隔离、群 @ 和 GitHub App 实写仍待验收。旧代码保留受控回退，同一机器人不同时启动新旧接收端；不能据本机私聊宣布正式赛场全量切换。
+## 当前状态
+
+已真实验证：
+
+- WorkBuddy 桌面连接本机工作人员 MCP，真实模型调用 `search_works` 返回 `H-001 / RAG 知识助手`。
+- 用户授权 WorkBuddy 接管原 `test机器人` 后，企业微信私聊完成只读查询；内部详情被服务端身份校验拒绝。
+- 独立五表智能表格沙盒完成登记故障修复、重试去重、排班修改读回和工单生命周期验证。
+- 76 项 `pytest`、`ruff`、`mypy` 及 25/25 确定性服务 Evals 通过。Evals 不调用模型。
+
+尚未完成正式赛时验收：
+
+- 企业微信群 @、多用户会话隔离和可信 sender 身份透传。
+- GitHub App 向专用作品仓库的真实写入；当前仅完成 Mock HTTP 测试。
+- 真实通知投递与接收人回执。
+- 正式 Owner/Reviewer 审批、真实 Agent 基线和 5–10 人赛前演练。
+
+当前保持公共只读。不能根据本机私聊结果宣布正式赛事全量切换。详细边界见 [v0.3 状态](docs/v03-status.md)和[企微私聊验收记录](docs/v03-wecom-acceptance.json)。
+
+## 架构
+
+```mermaid
+flowchart TD
+    U[工作人员：企业微信私聊] --> W[WorkBuddy 企微渠道与 Agent]
+    W --> M[工作人员 MCP / 8766]
+    P[选手自己的 Agent] -.-> PM[选手 MCP / 8765]
+    M --> B[Arena 业务服务]
+    PM --> B
+    B --> S[智能表格：作品、版本、值班、反馈、工单]
+    B --> K[Git 规则与 SOP 发布包]
+    B --> J[操作日志、审计和通知意图]
+    B -.-> G[GitHub 作品仓库]
+    B -.-> N[通知适配器]
+```
+
+职责边界：
+
+- **WorkBuddy** 负责工作人员侧的对话、工具选择和结果组织。
+- **选手 Agent** 通过选手 MCP 提交作品，业务身份来自服务端验证的 Bearer 凭据。
+- **Arena** 负责版本分配、文件检查、作品范围权限、DRI 工单状态机和幂等恢复。
+- **智能表格** 保存作品、版本、值班、反馈和工单等运营台账。
+- **Git** 保存规则与 Skills 的已发布版本；比赛示例内容必须由主办方替换。
+- **GitHub** 将保存作品文件和 commit/tag 证据；正式写入尚未配置。
+
+本项目采用 ANC 的共享 Context、Skills、动态 DRI、反馈与 Evals 思路，并针对赛事场景做了独立实现。与调研的对应关系、借鉴内容和本项目设计详见[搭建复盘](docs/anc-build-retrospective.md)。
+
+## 快速开始
+
+需要 Python 3.12、[uv](https://docs.astral.sh/uv/) 和 PowerShell。
 
 ```powershell
+# 安装锁定依赖并运行测试
 .\Run-Demo.ps1 -Mode verify
+
+# 仅检查 v0.3 配置，不写表格、不调用外部模型
 .\Run-Demo.ps1 -Mode doctor-v03
-.\Run-Demo.ps1 -Mode serve-staff -Port 8766
+
+# 启动工作人员 MCP，默认端口 8766，写操作关闭
+.\Run-Demo.ps1 -Mode workbuddy-poc
 ```
 
-以下为 v0.2 的历史实现与验收记录，外部状态以 v0.3 状态文件和当前探针为准。
+`workbuddy-poc` 只对当前进程设置智能表格 Registry、公共只读身份和关闭写入；结束后恢复原环境变量。不要同时启动第二个工作人员 MCP，也不要让旧机器人与 WorkBuddy 争用同一 Bot 长连接。
 
-这份 demo 将 Notion 方案中的提交、查询、知识答疑、值班和反馈流程变成可运行代码。
-当前已完成**本地业务闭环、ABF 企业微信身份绑定、四张真实测试子表、机器人单聊收发及反馈回写**。
-DeepSeek 尚待密钥验证，GitHub App 写入器和公网 MCP 尚未接通。
+在 WorkBuddy 的 MCP 配置中加入：
 
-## ABF 真实联调入口
-
-- 比赛登记表：ABF · Arena 比赛运行层 Demo，真实链接仅保存在本机 `SMARTSHEET_URL` 环境变量。
-- 本机服务：`http://127.0.0.1:8765/mcp`，健康状态：`http://127.0.0.1:8765/healthz`。
-- 企微机器人：`test机器人`。真实发送“山海队的作品ID”已收到正确回复，并在企微「反馈」表读回对应记录。
-- 本机 DeepSeek 密钥接入页：`http://127.0.0.1:18767`，由用户输入密码框；验证一次真实工具调用后才写本机用户环境变量，不经过聊天。
-- 机器人未配置模型时明确回复“离线演练，尚未连接 DeepSeek”。这是显式允许的演练模式。
-
-重新启动真实企微 demo：
-
-```powershell
-.\Run-Demo.ps1 -Mode live
+```json
+{
+  "mcpServers": {
+    "arena-local": {
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:8766/mcp",
+      "timeout": 60
+    }
+  }
+}
 ```
 
-仅运行一个实例；已运行时不要重复启动，以免同一机器人长连接相互挤占。
-「作品、版本、反馈」由本地业务状态同步到企微，工作人员补充的作品别名每约 60 秒回流。
-本阶段是**云端登记镜像**，SQLite/Git 仍维护提交事务。密钥及密钥哈希不上传；表中密钥哈希字段预留为空。值班表结构已创建与写入，动态值班回流仍待完整接入。
+首次连接需由用户在 WorkBuddy 界面确认信任。WorkBuddy 配置、五项 Skill 草案和运行说明见 [workbuddy/README.md](workbuddy/README.md)。
 
-身份映射也需区分：CLI 授权用户与机器人消息回调的标识可能不同；目前真实单聊按 participant 权限通过，工作人员和管理员消息身份仍待核对，不能以 CLI 登录代替 staff 角色验收。
+## 服务入口
 
-## 直接运行（Windows PowerShell）
-
-在本目录执行：
-
-```powershell
-.\Run-Demo.ps1
-```
-
-会自动用 `uv` 安装锁定依赖并执行：三队报名 → 两版提交 → 拒收缺 README → 查询固定编号 → 规则答疑 → 转人工待办 → 点踩报告。
-在本次 Codex 工作目录中，虚拟环境和运行数据保存在 `work/`，源代码放在 `outputs/arena/`。
-重复执行会保留历史并新增版本；只重置演练队伍密钥。示例数据均为虚构。
-
-验证真实 MCP 协议：
-
-```powershell
-.\Run-Demo.ps1 -Mode mcp-walkthrough
-```
-
-该命令启动临时 localhost TCP 服务，用**官方 MCP 客户端**完成 initialize、tools/list、tools/call，检查无效密钥 401、缺 README 拒收、提交与版本读取、两队隔离，然后自动关闭临时服务。
-队伍密钥在当前进程环境中生成与使用，不输出、不写入明文文件。
-
-检查外部工具（只读，不发消息、不写表格、不写 GitHub、不调用模型）：
-
-```powershell
-.\Run-Demo.ps1 -Mode selftest
-```
-
-启动长期运行的本机 MCP 服务：
-
-```powershell
-.\Run-Demo.ps1 -Mode serve
-# GET http://127.0.0.1:8765/healthz
-# MCP http://127.0.0.1:8765/mcp
-```
-
-此服务使用 SQLite 中已有队伍密钥哈希验证调用方。对外部 MCP 客户端接入，先用本机环境变量配置一枚队伍密钥，再执行 `uv run arena bind-key H-001 --env-name ARENA_TEAM_KEY`。客户端需要从它自己的本机环境读取相同密钥。
-`serve-demo` 的随机密钥仅在服务进程内，主要用于开发；完整自动演练请用 `mcp-walkthrough`。
-
-## 已实现的行为
-
-- **登记与身份**：SQLite 中的作品、版本、值班、反馈四张表；三位补零编号；按队名幂等导入；仅保存队伍密钥的 SHA-256。机器人身份通过工作人员与管理员白名单判断。
-- **提交**：MCP 三个工具 `submit_work`、`get_my_work`、`list_my_versions`；作品身份取自 HTTP Bearer 密钥，工具参数没有 `work_id`；工具执行时再次验证密钥。
-- **检查**：README、截止时间、路径穿越、Windows 特殊文件名、大小、重复内容、base64、路径冲突；README 太短给出提示。为符合本次“凭据不得上传”要求，疑似 `.env`、API Key 或私钥**阻断**，比原规格的警告更严格。
-- **版本**：真实本地 Git commit 与 `H-xxx/vN` tag，整体替换本作品目录，保留其他作品。单服务的异步锁串行处理提交，验证过 20 并发版本分配。
-- **答疑与权限**：模糊匹配、中文 BM25、按角色隔离 SOP 和作品详情；Skills YAML 启动校验；基于工具原始结果生成有来源的回复；模型不可自由编造作品 ID。
-- **反馈**：按当前时段找负责人；离线模式只记录待转人工，不声称投递成功；反馈记录和 CLI 点赞点踩。
-- **DeepSeek 接口**：实现 tool calling 循环、按角色提供工具、每工具内部再验权、4 轮上限、30 秒请求与 60 秒整体超时。接口已用假响应验证，未使用真实 API Key 调用。
-- **企业微信 SDK 接口**：长连接、流式回复、进入会话欢迎语、限并发、重连和主动通知适配器；单聊真实收发通过，群 @、原生点赞事件和真实转人工投递仍待分别验收。
-- **企微云端桥接**：四表创建和字段读回、真实记录写入回读、演练业务状态镜像、对话反馈回写、别名回流；同步失败保留本地状态并在健康接口报告失败。
-
-## 两种答疑模式
-
-```powershell
-uv run arena ask '山海队的作品ID'
-uv run arena ask '怎么提交'
-uv run arena ask '签到怎么处理' --userid demo-staff
-```
-
-默认为 `offline-scripted`：本地确定性路由，**没有调用大模型**。需要演练工作人员身份时，先把 `demo-staff` 加入本机 `STAFF_USERIDS` 环境变量。
-
-真实 DeepSeek 模式要求在本机环境配置 `LLM_API_KEY`（或 `DEEPSEEK_API_KEY`）、`LLM_BASE_URL`、`LLM_MODEL`，再执行：
-
-```powershell
-uv run arena ask '山海队的作品编号是多少' --llm
-```
-
-默认地址 `https://api.deepseek.com`，模型名 `deepseek-flash`，依据 2026-10-28 官方文档；可通过环境变量覆盖。调用会发送问题、可用工具和检索结果到所配置模型地址。
-没有密钥时显式报错；不会默默把离线路由伪装成模型结果。代码不自动读取 `.env` 文件。
-
-## 外部系统接入状态
-
-| 项目 | 本次实际状态 | 后续事项 |
+| 服务 | 默认地址 | 用途 |
 | --- | --- | --- |
-| Python / uv / Git | Python 3.12.14、uv 0.12.18、Git 可运行 | 使用锁定环境 |
-| 企业微信 CLI | 1.3.4；扫码绑定后真实身份查询通过，40125 已排除 | token 通过用户环境变量提供 |
-| 企业微信机器人 | test机器人长连接已认证；真实单聊收到并回复 1 条 | 继续验收群 @、工作人员角色和转人工 |
-| 企业微信智能表格 | 四表已创建，字段、记录写入与回读通过；用户真实消息反馈已回写 | 继续完善完整 Registry 与值班回流 |
-| GitHub | `gh` 已登录，能够读取账户信息 | 专用作品仓库与 GitHub App 未配置；本 demo 不向公网提交作品 |
-| DeepSeek | 接口代码与假响应测试完成；未检测到 API Key | 本机环境配置后真实请求验收 |
-| Docker | 已启动 Docker Desktop，引擎 29.8.2 可响应；容器验收见 CHECKS.md | 使用本地容器演练 |
-| 公网 MCP / HTTPS | 本机 HTTP 协议已验证，尚无公网地址 | 确认服务器与 HTTPS 域名，再做远程客户端验收 |
+| 选手 MCP | `http://127.0.0.1:8765/mcp` | 提交作品、查询本队作品与版本 |
+| 选手健康检查 | `http://127.0.0.1:8765/healthz` | 本机业务状态，不等于外部渠道全链路正常 |
+| 工作人员 MCP | `http://127.0.0.1:8766/mcp` | 公共查询及受控工作人员工具 |
+| 工作人员健康检查 | `http://127.0.0.1:8766/healthz` | 当前进程、注册表和写开关状态 |
 
-**CLI 与自建应用是不同凭据体系。** 官方 CLI 支持智能表格管理，不代表常驻服务已经拥有自建应用 `access_token`、可信 IP 或真实数据读写权限。
-本 demo 不复制或解密 CLI 既有凭据，也未执行会新增凭据文件的 `auth init`。
-`arena connect-wecom` 按官方开源扫码和签名协议完成绑定，将机器人凭据与 `WECOM_CLI_ACCESS_TOKEN` 直接写入 Windows 用户环境变量。CLI 子进程从该环境取 token；原有凭据文件保持不动。环境 token 的自动续期仍需后续接入。
+本机原生企微渠道可以访问 localhost MCP。远程选手或云端 Agent 接入时，需要另行部署已验证的 HTTPS MCP；当前没有公网在线演示地址。
 
-## 当前与完整规格的差距
+## 配置与安全
 
-这不是 M1–M8 全部完成的交付。以下内容尚未实现或验收：
+凭据只通过本机环境变量传入，不写入源码、日志、智能表格或文档。变量名见 [.env.example](.env.example)；不要提交实际 `.env` 文件。
 
-- 以智能表格为主存储的完整 Registry。当前已实现约 60 秒登记镜像和作品别名回流；完整值班和其他人工编辑字段回流未实现。
-- GitHub App 写入器、分支冲突重试、自动 pending-sync 恢复。当前登记失败会保留 `pending_sync.jsonl`，由人工核对；已有 tag 冲突会停下，不覆盖。
-- `repo_url` 大作品拉取、公开仓库大小限制与指定 ref 提交。
-- 企业微信群 @ 真实验收、原生反馈事件解析、投递权限、断线后的端到端恢复。
-- 完整报名发密钥与密钥分发流程。CLI 不打印明文，也不生成 `credentials.csv`；导入时生成的临时密钥随进程结束不可恢复，可通过 `bind-key` 重新绑定本机环境变量中的密钥。
-- 公网 HTTPS、Claude Code / Cursor 真实远程接入、企微端到端重连与长期运行验收。
+主要配置：
 
-ABF 测试表目前将状态、事项类别、来源和评价作为文本字段以便演练；生产 schema 的单选约束尚未落实。
-Windows Python 3.12 的 WMI 系统查询在本机实测挂起，项目启动时禁用可选 `_wmi` 导入，使用 stdlib 原有 Win32 回退；未修改系统 WMI 服务或 Python 安装目录。
+| 变量 | 用途 |
+| --- | --- |
+| `ARENA_REGISTRY` | `local` 或 `smartsheet` 业务台账 |
+| `ARENA_WRITER` | `local` 或 `github` 作品写入器 |
+| `ARENA_TEAM_CREDENTIALS` | 队伍凭据摘要映射 |
+| `ARENA_STAFF_CREDENTIALS` | 工作人员 token 摘要、角色和作品范围 |
+| `ARENA_STAFF_WRITES_ENABLED` | 工作人员写操作服务端开关 |
+| `ARENA_SMARTSHEET_WRITES_ENABLED` | 智能表格写操作服务端开关 |
+| `GITHUB_APP_ID` / `GITHUB_INSTALLATION_ID` | GitHub App 安装身份 |
+| `GITHUB_APP_PRIVATE_KEY` | 仅从本机环境读取的 GitHub App 私钥 |
 
-## 测试
+服务端不信任聊天文本、模型参数或客户端自报的 `userid`/`role`。修改凭据后重启对应服务；日志不得记录认证头。
+
+## 外部系统状态
+
+| 系统 | 当前状态 | 尚未完成 |
+| --- | --- | --- |
+| WorkBuddy 桌面 | 真实模型与只读 MCP 已通过 | Enterprise 或云端席位资格 |
+| 企业微信 | 原测试机器人私聊只读闭环已通过 | 群 @、多人隔离、sender 透传、重连稳定性 |
+| 企业微信智能表格 | 原测试表只读；独立五表沙盒读写通过 | 正式台账迁移与通知回执 |
+| GitHub | App Writer 代码和 Mock 故障测试完成 | App 凭据、专用仓库、真实 commit/tag |
+| 模型 | WorkBuddy 桌面真实模型调用通过 | 正式模型路由、配额和成本验收 |
+| 通知 | outbox、状态和重试边界已实现 | 真实 Provider 投递和接收人确认 |
+| 公网 MCP | 本机 HTTP 联调通过 | HTTPS 地址、访问认证与网络验证 |
+
+## 开发与验证
 
 ```powershell
 uv run pytest -q
 uv run ruff check .
 uv run mypy src
+uv run python evals/run.py
 ```
 
-默认测试通过 socket 限制阻止外网连接，仅 localhost MCP 协议测试使用真实 TCP。DeepSeek 用 `respx` 假响应；所有演练均不发送真实企业微信消息。
+测试默认禁止外网访问；只有 localhost MCP 协议测试使用真实 TCP。模型失败路径使用假响应，不得作为真实模型验收。外部系统失败时保留本地证据，不用 Mock 结果冒充正式作品或消息记录。
 
-Docker 本机启动：
+完整运行、切换和回滚步骤见 [v0.3 运行手册](docs/v03-runbook.md)。工作人员工具输入输出及错误约定见 [工作人员 MCP 契约](docs/staff-mcp-contract.md)。
+
+## Demo 与文档
+
+- [代码仓库](https://github.com/Eevanes/ABF_demo)（私有）
+- [v0.3 交付 PR](https://github.com/Eevanes/ABF_demo/pull/1)
+- [v0.3 验收状态](docs/v03-status.md)
+- [ANC 搭建复盘](docs/anc-build-retrospective.md)
+- [工作人员接入说明](docs/staff.md)
+- [选手接入说明](docs/participant.md)
+- [智能表格结构](docs/smartsheet-schema.md)
+- [Notion 方案](https://app.notion.com/p/407a4d98cffb81229afdfcafdfa0010b)
+- [Notion 搭建复盘](https://app.notion.com/p/407a4d98cffb8135a463f85b62f4e7fd)
+
+## v0.2 历史能力
+
+v0.2 已完成本机提交、版本、查询、规则答疑、值班和反馈的基础演练，并保留旧机器人、云端镜像和本地 SQLite 兼容路径。v0.3 在这些确定性业务逻辑上增加独立工作人员 MCP、智能表格 Registry、GitHub App Writer、恢复对账和 DRI 工单。
+
+旧模式仍可用于受控回退，但外部状态以 v0.3 状态文件和当前探针为准：
 
 ```powershell
-docker compose up --build -d
-# 查看本机健康接口：http://127.0.0.1:8765/healthz
-docker compose down
+.\Run-Demo.ps1 -Mode mcp-walkthrough
+.\Run-Demo.ps1 -Mode serve
 ```
-
-Compose 只启动本地模式 MCP，不注入企业微信、GitHub 或模型凭据。真实云端系统另行联调。
 
 ## 来源
 
-- [Notion 总方案](https://app.notion.com/p/406a4d98cffb80aca765c48f98108870)
-- [详细搭建规格](https://app.notion.com/p/3945e01d2d8349609df852f82d43d4ef)
+- [ANC 概念调研](https://app.notion.com/p/406a4d98cffb80aca765c48f98108870)
+- [Arena 技术调研](https://app.notion.com/p/033a670eaaf64451ab1a18adf4536b26)
+- [初版搭建规格](https://app.notion.com/p/3945e01d2d8349609df852f82d43d4ef)
+- [ANC 开源项目](https://github.com/HA7CH/ai-native-company)
 - [企业微信官方 CLI](https://github.com/WecomTeam/wecom-cli)
-- [CLI 参数与环境变量](https://github.com/WecomTeam/wecom-cli/blob/main/docs/cli-reference.md)
-- [企业微信机器人 Python SDK](https://github.com/WecomTeam/wecom-aibot-python-sdk)
 - [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
 - [DeepSeek Tool Calls](https://api-docs.deepseek.com/guides/tool_calls/)
-- [DeepSeek 模型列表](https://api-docs.deepseek.com/quick_start/pricing/)
