@@ -1,5 +1,22 @@
 # Arena · ANC 比赛运行层 demo
 
+## v0.3 迭代
+
+按 [WorkBuddy 与 ANC 实施方案](https://app.notion.com/p/407a4d98cffb81229afdfcafdfa0010b) 增量迁移。
+新增独立工作人员 MCP、可信查询服务、发布版规则过滤、智能表格 Registry、GitHub App 写入器、
+提交幂等与重启恢复、工单/通知审计，以及 WorkBuddy 五项 Skill 和评估样例。
+
+当前交付与真实联调范围见 [v0.3 状态](docs/v03-status.md)，运行与回滚见 [v0.3 手册](docs/v03-runbook.md)。
+WorkBuddy 身份透传、企微渠道和 GitHub App 实写验收完成前保留旧入口；不能据本地测试宣布正式切换。
+
+```powershell
+.\Run-Demo.ps1 -Mode verify
+.\Run-Demo.ps1 -Mode doctor-v03
+.\Run-Demo.ps1 -Mode serve-staff -Port 8766
+```
+
+以下为 v0.2 的历史实现与验收记录，外部状态以 v0.3 状态文件和当前探针为准。
+
 这份 demo 将 Notion 方案中的提交、查询、知识答疑、值班和反馈流程变成可运行代码。
 当前已完成**本地业务闭环、ABF 企业微信身份绑定、四张真实测试子表、机器人单聊收发及反馈回写**。
 DeepSeek 尚待密钥验证，GitHub App 写入器和公网 MCP 尚未接通。

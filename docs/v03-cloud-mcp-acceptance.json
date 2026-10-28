@@ -1,0 +1,11 @@
+{
+  "mode": "real_smartsheet_localhost_mcp_sandbox",
+  "timestamp": "2026-10-28T11:44:21.135599+00:00",
+  "ticket_create_retry_deduplicated": true,
+  "ack_start_resolve_close_readback": true,
+  "notify_status": "queued",
+  "messages_sent": 0,
+  "original_demo_modified": false,
+  "workbuddy_identity_passthrough": "not_tested",
+  "credentials": "ephemeral_independent_test_identity"
+}

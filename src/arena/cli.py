@@ -6,6 +6,7 @@ import shutil
 import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import cast
 
 import typer
 import uvicorn
@@ -40,6 +41,10 @@ def import_local_configuration():
             "SHEET_FEEDBACK",
             "STAFF_USERIDS",
             "ADMIN_USERIDS",
+            "ARENA_REGISTRY", "ARENA_WRITER", "ARENA_TEAM_CREDENTIALS",
+            "ARENA_STAFF_CREDENTIALS", "ARENA_STAFF_WRITES_ENABLED", "ARENA_SMARTSHEET_WRITES_ENABLED",
+            "GITHUB_APP_ID", "GITHUB_APP_PRIVATE_KEY", "GITHUB_INSTALLATION_ID", "GITHUB_REPO",
+            "GITHUB_BRANCH", "PUBLIC_BASE_URL", "SHEET_TICKETS",
         )
     )
 
@@ -92,6 +97,80 @@ def serve(
         log_level="warning",
         access_log=False,
     )
+
+
+@app.command()
+def serve_staff(host: str = "127.0.0.1", port: int = 8766):
+    """WorkBuddy staff MCP; public read-only until independent trusted authentication is configured."""
+    from arena.runtime import registry_backend
+    from arena.staff_mcp import create_staff_app
+
+    settings = Settings()
+    registry = registry_backend(settings)
+    from arena.observability.audit import OperationJournal
+    from arena.workflows.outbox import NotificationOutbox
+    from arena.workflows.runner import TicketWorker
+    from arena.workflows.tickets import TicketBackend, TicketService
+
+    journal = OperationJournal(settings.data_dir / "workflow-operations.sqlite3")
+    ticket_backend = cast(TicketBackend, registry) if hasattr(registry, "save_ticket") else journal
+    tickets = TicketService(ticket_backend, journal, registry.on_duty,
+                            settings.admin_userids.split(",")[0])
+    worker = TicketWorker(tickets, NotificationOutbox(journal)) if os.environ.get("ARENA_STAFF_WRITES_ENABLED", "").lower() == "true" else None
+    try:
+        uvicorn.run(create_staff_app(settings, registry, tickets=tickets, worker=worker), host=host, port=port,
+                    log_level="warning", access_log=False)
+    finally:
+        journal.close()
+        registry.close()
+
+
+@app.command()
+def reconcile():
+    """Recover pending registration from immutable Git evidence without creating new versions."""
+    from arena.runtime import backends
+
+    settings = Settings()
+    registry, writer = backends(settings)
+    try:
+        result = asyncio.run(SubmissionService(settings, registry, writer).reconcile())
+        emit(result)
+        if result["pending"]:
+            raise typer.Exit(1)
+    finally:
+        registry.close()
+
+
+@app.command()
+def doctor_v03(live_read: bool = False):
+    """Read-only v0.3 readiness report; never sends messages, writes tables or creates tokens."""
+    from arena.runtime import EnvironmentCredentials
+
+    required = ("GITHUB_APP_ID", "GITHUB_APP_PRIVATE_KEY", "GITHUB_INSTALLATION_ID", "GITHUB_REPO", "PUBLIC_BASE_URL")
+    report: dict = {
+        "mode": "live_read_only" if live_read else "configuration_only",
+        "configured": {key: bool(os.environ.get(key)) for key in required},
+        "workbuddy_identity_passthrough": "not_verified",
+        "workbuddy_channel_e2e": "not_verified",
+        "github_app_e2e": "not_verified",
+        "production_cutover": False,
+    }
+    if live_read:
+        from arena.adapters.smartsheet_registry import SmartSheetRegistry
+
+        try:
+            registry = SmartSheetRegistry(EnvironmentCredentials())
+            works = registry.works()
+            report["smartsheet"] = {"state": "live_read_passed", "works_count": len(works)}
+            from arena.services.queries import QueryService
+            from arena.staff_auth import StaffIdentity
+
+            # Real test-table query, no personal or credential fields in the report.
+            result = asyncio.run(QueryService(registry).search_works("山海队", StaffIdentity("")))
+            report["smartsheet"]["query_result_count"] = len(result)
+        except Exception as exc:
+            report["smartsheet"] = {"state": "failed", "error_type": type(exc).__name__}
+    emit(report)
 
 
 @app.command()

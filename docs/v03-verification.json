@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-28",
+  "baseline_commit": "703c048",
+  "version": "0.3.0.dev1",
+  "scope": "local_business_checks_and_isolated_real_smartsheet_sandbox",
+  "pytest": {"passed": 76, "command": "Run-Demo.ps1 -Mode verify"},
+  "ruff": "passed",
+  "mypy": {"status": "passed", "source_files": 33},
+  "service_evals": {"passed": 25, "total": 25, "agent_model_called": false},
+  "real_table_readonly_mcp": "passed",
+  "real_isolated_smartsheet_adapter": "passed",
+  "real_isolated_smartsheet_mcp_ticket_lifecycle": "passed",
+  "github_app_artifact_write": "mock_only_not_live",
+  "workbuddy_wecom_e2e": "not_verified",
+  "notification_provider_receipts": "not_verified",
+  "real_messages_sent": 0,
+  "production_cutover": false
+}

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -41,6 +42,8 @@ class LocalGitWriter:
             )
 
     async def write(self, work_id: str, version: int, files: dict[str, bytes], metadata: dict) -> dict:
+        if not re.fullmatch(r"H-[0-9]{3,}", work_id) or version < 1:
+            raise ValueError("invalid work/version")
         await self.start()
         tag = f"{work_id}/v{version}"
         # 停机后未登记的提交不可静默覆盖：保留现场，交由管理员核对。
@@ -74,3 +77,14 @@ class LocalGitWriter:
         sha = await self.git("rev-parse", "HEAD")
         await self.git("tag", tag, sha)
         return {"tag": tag, "commit_sha": sha, "repo_link": str(target)}
+
+    async def recover(self, work_id: str, version: int) -> dict | None:
+        if not re.fullmatch(r"H-[0-9]{3,}", work_id) or version < 1:
+            raise ValueError("invalid work/version")
+        await self.start()
+        tag = f"{work_id}/v{version}"
+        if tag not in (await self.git("tag", "--list", tag)).splitlines():
+            return None
+        sha = await self.git("rev-parse", tag)
+        meta = json.loads(await self.git("show", f"{tag}:works/{work_id}/SUBMISSION.json"))
+        return {"tag": tag, "commit_sha": sha, "repo_link": str(self.root / "works" / work_id), "metadata": meta}

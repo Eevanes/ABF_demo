@@ -1,0 +1,16 @@
+{
+  "mode": "real_smartsheet_adapter_sandbox",
+  "timestamp": "2026-10-28T10:32:22.693417+00:00",
+  "schema_verified_sheets": 5,
+  "synthetic_works": 1,
+  "versions_after_retries": 1,
+  "pointer_failure_recovered": true,
+  "registration_status_readback": "registered",
+  "duty_direct_edit_readback": true,
+  "ticket_idempotent_status_readback": true,
+  "original_demo_modified": false,
+  "github_artifact_e2e": "not_run",
+  "workbuddy_e2e": "not_run",
+  "real_messages_sent": 0,
+  "sandbox_id_location": "ARENA_V03_SMARTSHEET_DOCID local user environment"
+}

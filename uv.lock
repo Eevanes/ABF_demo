@@ -207,13 +207,14 @@ wheels = [
 
 [[package]]
 name = "arena-demo"
-version = "0.2.0"
+version = "0.3.0.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
     { name = "jieba" },
     { name = "mcp" },
     { name = "pydantic-settings" },
+    { name = "pyjwt", extra = ["crypto"] },
     { name = "pyyaml" },
     { name = "qrcode" },
     { name = "rank-bm25" },
@@ -240,6 +241,7 @@ requires-dist = [
     { name = "jieba", specifier = ">=0.42,<1" },
     { name = "mcp", specifier = "==1.30.0" },
     { name = "pydantic-settings", specifier = ">=2.7,<3" },
+    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.10,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
     { name = "qrcode", specifier = ">=8,<9" },
     { name = "rank-bm25", specifier = ">=0.2,<1" },
