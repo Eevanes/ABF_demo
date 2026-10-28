@@ -10,9 +10,10 @@ import httpx
 import jieba
 import yaml
 from rank_bm25 import BM25Okapi
-from rapidfuzz.fuzz import WRatio
 
 from arena.config import Settings
+from arena.services.queries import QueryService
+from arena.staff_auth import StaffIdentity
 from arena.store import Store
 
 jieba.setLogLevel(40)
@@ -113,6 +114,7 @@ TOOL_DEFS = {
 class Harness:
     def __init__(self, settings: Settings, store: Store, messenger: Messenger | None = None):
         self.settings, self.store = settings, store
+        self.queries = QueryService(store)
         self.messenger = messenger or LocalMessenger()
         self.knowledge = Knowledge(RESOURCE_ROOT / "knowledge")
         self.skills = load_skills(RESOURCE_ROOT / "skills")
@@ -146,31 +148,17 @@ class Harness:
             raise PermissionError("当前身份无权调用该工具")
         staff = role in ("staff", "admin")
         if name == "search_works":
-            query = str(args["query"]).strip().lower()[:500]
-            if not query:
-                return []
-            results = []
-            for work in self.store.works():
-                if work["status"] == "已禁用":
-                    continue
-                fields = [str(work[k]) for k in ("id", "title", "team", "members", "aliases", "description")]
-                score = max(WRatio(query, value.lower()) for value in fields)
-                if any(query in value.lower() for value in fields):
-                    score = 100
-                if score < 45:
-                    continue
-                allowed = ("id", "title", "team", "latest") if staff else ("id", "title", "team")
-                results.append({k: work[k] for k in allowed} | {"score": score})
-            return sorted(results, key=lambda work: work["score"], reverse=True)[:5]
+            return await self.queries.search_works(
+                str(args["query"]), StaffIdentity("legacy-harness", role), sources=False
+            )
         if name == "get_work":
-            found = self.store.get(str(args["work_id"]))
-            return found | {"versions": self.store.versions(found["id"])} if found else None
+            return await self.queries.get_work(str(args["work_id"]), StaffIdentity("legacy-harness", role))
         if name == "search_knowledge":
             return self.knowledge.search(str(args["query"]), staff)
         category = str(args.get("category", "其他"))
-        duty = self.store.on_duty(category)
         if name == "get_on_duty":
-            return duty
+            return await self.queries.get_on_duty(category, StaffIdentity("legacy-harness", role))
+        duty = self.store.on_duty(category)
         assignee = duty or self.store.on_duty("其他")
         if not assignee and self.settings.admin_userids:
             assignee = {"name": "管理员", "userid": self.settings.admin_userids.split(",")[0]}

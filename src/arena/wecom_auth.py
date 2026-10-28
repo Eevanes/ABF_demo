@@ -11,6 +11,7 @@ import os
 import secrets
 import shutil
 import subprocess
+import sys
 import time
 from contextlib import asynccontextmanager
 from typing import Callable
@@ -30,7 +31,7 @@ SECRET_NAMES = ("WECOM_BOT_ID", "WECOM_BOT_SECRET", "WECOM_CLI_ACCESS_TOKEN")
 
 
 def save_user_environment(values: dict[str, str]) -> None:
-    if os.name != "nt":
+    if sys.platform != "win32":
         raise ValueError("此环境变量安装器目前只支持 Windows")
     import winreg
 
@@ -45,7 +46,7 @@ def save_user_environment(values: dict[str, str]) -> None:
 
 def import_user_environment(names: tuple[str, ...] = SECRET_NAMES) -> None:
     """供 CLI 子进程启动时显式调用；不覆盖已有进程级配置。"""
-    if os.name != "nt":
+    if sys.platform != "win32":
         return
     import winreg
 

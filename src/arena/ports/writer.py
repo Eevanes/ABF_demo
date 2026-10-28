@@ -1,0 +1,9 @@
+from typing import Any, Protocol
+
+
+class ArtifactWriter(Protocol):
+    async def start(self) -> None: ...
+    async def recover(self, work_id: str, version: int) -> dict[str, Any] | None: ...
+    async def write(
+        self, work_id: str, version: int, files: dict[str, bytes], metadata: dict[str, Any]
+    ) -> dict[str, Any]: ...

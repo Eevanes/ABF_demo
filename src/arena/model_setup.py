@@ -1,6 +1,7 @@
 """Loopback-only DeepSeek credential intake. The user types the key, never the agent."""
 
 import os
+import sys
 
 import httpx
 from starlette.applications import Starlette
@@ -10,7 +11,7 @@ from starlette.routing import Route
 
 
 def save_model_key(value: str) -> None:
-    if os.name != "nt":
+    if sys.platform != "win32":
         raise ValueError("此安装器仅支持 Windows 用户环境变量")
     import winreg
 

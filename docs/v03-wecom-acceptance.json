@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-28",
+  "state": "private_chat_readonly_roundtrip_passed",
+  "route": "WeCom private chat -> WorkBuddy native channel -> local Arena MCP -> WeCom reply",
+  "bot_display_name": "test机器人",
+  "bot_reuse": "explicitly_authorized_by_user",
+  "binding": "completed_by_user_in_WorkBuddy",
+  "old_receiver": {
+    "port_8765": "unreachable_at_preflight",
+    "python_process_inventory": "only_current_staff_mcp_launcher_and_runtime_observed",
+    "processes_stopped_by_agent": 0
+  },
+  "local_mcp_endpoint": "http://127.0.0.1:8766/mcp",
+  "registry": "real_wecom_test_table",
+  "staff_writes_enabled": false,
+  "smartsheet_writes_enabled": false,
+  "staff_credentials_configured": false,
+  "request": {
+    "sent_by": "user",
+    "recipient_verified_in_desktop_ui": "test机器人 private chat",
+    "visible_time": "20:42",
+    "query": "search_works for 山海队, then get_work with returned work ID; no data changes",
+    "messages_sent": 1,
+    "group_test_messages_sent": 0
+  },
+  "reply": {
+    "observed_in_wecom_desktop_ui": true,
+    "receipt_confirmed_by_user": true,
+    "work_id": "H-001",
+    "title": "RAG 知识助手",
+    "detail_result": "需要独立认证的工作人员身份",
+    "identity_effect": "public_query_allowed_internal_detail_denied"
+  },
+  "mcp_server_evidence": {
+    "request_type": "CallToolRequest",
+    "observed_at": ["2026-10-28T20:42:36+08:00", "2026-10-28T20:42:42+08:00"],
+    "limitation": "server log records request type and time, not tool names; query and permission results read back from WeCom reply"
+  },
+  "not_verified": [
+    "group_mentions",
+    "multi_user_session_isolation",
+    "trusted_sender_identity_forwarding_to_MCP",
+    "authenticated_staff_operations_from_WeCom",
+    "restart_recovery_and_long_running_stability"
+  ]
+}

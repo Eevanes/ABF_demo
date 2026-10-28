@@ -8,13 +8,16 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 
 from arena.config import Settings
+from arena.ports.registry import Registry
+from arena.ports.writer import ArtifactWriter
+from arena.runtime import backends
 from arena.store import Store
 from arena.submission import InputFile, Submission, SubmissionService
 from arena.writer import LocalGitWriter
 
 
 class MCPAuth:
-    def __init__(self, app, store: Store, body_limit: int):
+    def __init__(self, app, store: Registry, body_limit: int):
         self.app, self.store, self.body_limit = app, store, body_limit
 
     async def __call__(self, scope, receive, send):
@@ -51,18 +54,25 @@ class MCPAuth:
 
 def create_app(
     settings: Settings | None = None,
-    store: Store | None = None,
+    store: Registry | None = None,
     with_bot: bool = False,
     with_cloud: bool = False,
     allow_offline: bool = False,
+    writer: ArtifactWriter | None = None,
 ):
     settings = settings or Settings()
     owns_store = store is None
-    registry = store or Store(settings.data_dir / "registry.sqlite3")
-    service = SubmissionService(settings, registry, LocalGitWriter(settings.data_dir / "works-repo"))
+    if store is None:
+        registry, selected_writer = backends(settings)
+    else:
+        registry, selected_writer = store, LocalGitWriter(settings.data_dir / "works-repo")
+    service = SubmissionService(settings, registry, writer or selected_writer)
     bot_status: dict = {"state": "not_attached"}
+    recovery_status: dict = {"state": "idle"}
     bridge = None
     if with_cloud:
+        if not isinstance(registry, Store):
+            raise ValueError("SmartSheetRegistry cannot run the legacy CloudBridge mirror")
         from arena.cloud_bridge import CloudBridge
 
         bridge = CloudBridge(registry)
@@ -88,7 +98,8 @@ def create_app(
 
     @mcp.tool()
     async def submit_work(
-        description: str, files: list[InputFile], ctx: Context, title: str | None = None
+        description: str, files: list[InputFile], ctx: Context, title: str | None = None,
+        submission_id: str | None = None,
     ) -> dict:
         """提交本队新版本。files 为文本或 base64 文件列表，根目录必须有 README.md，
         解码后总大小默认 5MB；不可包含密钥。demo 暂不支持 repo_url。
@@ -96,7 +107,7 @@ def create_app(
         """
         work, key = identity(ctx)
         return await service.submit(
-            work["id"], Submission(description=description, files=files, title=title), key
+            work["id"], Submission(description=description, files=files, title=title, submission_id=submission_id), key
         )
 
     @mcp.tool()
@@ -105,7 +116,7 @@ def create_app(
         work, _ = identity(ctx)
         return {k: work[k] for k in ("id", "title", "team", "latest", "status")} | {
             "deadline": settings.submission_deadline.isoformat(),
-            "storage": "local-git",
+            "storage": type(service.writer).__name__,
         }
 
     @mcp.tool()
@@ -117,9 +128,28 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app):
         tasks = []
+
+        async def recover_pending():
+            while True:
+                try:
+                    if service.journal.pending():
+                        result = await service.reconcile()
+                        recovery_status.update(state="pending" if result["pending"] else "idle")
+                    else:
+                        recovery_status.update(state="idle")
+                    recovery_status.pop("error", None)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    recovery_status.update(state="failed", error=type(exc).__name__)
+                await asyncio.sleep(60)
+
         try:
             async with mcp.session_manager.run():
+                tasks.append(asyncio.create_task(recover_pending()))
                 if with_bot:
+                    if not isinstance(registry, Store):
+                        raise ValueError("legacy bot only supports local rollback mode")
                     from arena.bot import run_bot
 
                     tasks.append(asyncio.create_task(run_bot(settings, registry, bot_status, allow_offline)))
@@ -134,10 +164,13 @@ def create_app(
                 registry.close()
 
     async def health(request: Request):
-        pending = settings.data_dir / "pending_sync.jsonl"
-        count = len(pending.read_text(encoding="utf-8").splitlines()) if pending.exists() else 0
+        count = len(service.journal.pending())
+        legacy_pending = settings.data_dir / "pending_sync.jsonl"
+        legacy_count = len(legacy_pending.read_text(encoding="utf-8").splitlines()) if legacy_pending.exists() else 0
         ready = (
             not count
+            and not legacy_count
+            and recovery_status["state"] != "failed"
             and (not with_bot or bot_status.get("state") == "authenticated")
             and (not bridge or bridge.status["state"] == "ready")
         )
@@ -146,10 +179,12 @@ def create_app(
                 "status": "ok" if ready else "degraded",
                 "mode": "wecom-demo" if with_bot or with_cloud else "local-demo",
                 "pending_sync": count,
-                "storage": "sqlite + local-git",
+                "legacy_pending_manual_review": legacy_count,
+                "recovery": recovery_status,
+                "storage": {"registry": type(registry).__name__, "writer": type(service.writer).__name__},
                 "wecom": bot_status if with_bot else "not_attached",
                 "smartsheet": bridge.status if bridge else "not_attached",
-                "github": "not_attached",
+                "github": "configured_not_probed" if type(service.writer).__name__ == "GitHubAppWriter" else "not_attached",
                 "deepseek": "not_called_by_mcp",
             },
             status_code=200 if ready else 503,

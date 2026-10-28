@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     max_inline_bytes: int = 5 * 1024 * 1024
     staff_userids: str = ""
     admin_userids: str = ""
+    policy_release: str = Field(default="demo-unpublished", validation_alias="ARENA_POLICY_RELEASE")
     llm_base_url: str = "https://api.deepseek.com"
     llm_model: str = "deepseek-flash"
     llm_api_key: SecretStr = Field(
