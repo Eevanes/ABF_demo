@@ -45,6 +45,7 @@ def import_local_configuration():
             "ARENA_STAFF_CREDENTIALS", "ARENA_STAFF_WRITES_ENABLED", "ARENA_SMARTSHEET_WRITES_ENABLED",
             "GITHUB_APP_ID", "GITHUB_APP_PRIVATE_KEY", "GITHUB_INSTALLATION_ID", "GITHUB_REPO",
             "GITHUB_BRANCH", "PUBLIC_BASE_URL", "SHEET_TICKETS",
+            "ARENA_V04_SMARTSHEET_DOCID", "ARENA_POLICY_RELEASE",
         )
     )
 
@@ -171,6 +172,14 @@ def doctor_v03(live_read: bool = False):
         except Exception as exc:
             report["smartsheet"] = {"state": "failed", "error_type": type(exc).__name__}
     emit(report)
+
+
+@app.command()
+def doctor_v04(live_read: bool = False):
+    """v0.4 配置检查；--live-read 仅只读独立 v0.4 沙盒，不写表、不发消息。"""
+    from arena.readiness import report_json
+
+    typer.echo(report_json(live_read))
 
 
 @app.command()

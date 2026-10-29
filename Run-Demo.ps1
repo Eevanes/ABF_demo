@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('demo','mcp-walkthrough','selftest','serve','serve-staff','workbuddy-poc','doctor-v03','reconcile','verify','live','connect-wecom','connect-model','provision-wecom')]
+    [ValidateSet('demo','mcp-walkthrough','selftest','serve','serve-staff','workbuddy-poc','doctor-v03','doctor-v04','v04-submission-check','reconcile','verify','live','connect-wecom','connect-model','provision-wecom')]
     [string]$Mode = 'demo',
     [int]$Port = 8765
 )
@@ -35,6 +35,7 @@ if ((Split-Path (Split-Path $PSScriptRoot -Parent) -Leaf) -eq 'outputs') {
 }
 try { switch ($Mode) {
     'mcp-walkthrough' { & uv run --frozen python scripts/mcp_walkthrough.py }
+    'v04-submission-check' { & uv run --frozen python scripts/v04_submission_acceptance.py }
     'serve' { & uv run --frozen arena serve --port $Port }
     'serve-staff' { & uv run --frozen arena serve-staff --port $Port }
     'workbuddy-poc' { & uv run --frozen arena serve-staff --port $Port }
