@@ -4,6 +4,14 @@ Arena 将比赛中的作品提交、查询、规则答疑、值班协调和异�
 
 当前版本：`0.3.0.dev1`。
 
+v0.4 已完成本轮代码与联调准备：新增原生 WorkBuddy 候选包、配置诊断、两队两版真实提交验收脚本和 26 项 Agent 题集。用户确认原生能力可实现，但企业版尚未开通；GitHub App 尚未创建，因此真实验收保持待完成，当前工作人员 MCP 兼容链路继续保留。详见 [v0.4 状态](docs/v04-status.md)与[运行手册](docs/v04-runbook.md)。
+
+```powershell
+# 只检查配置，不写外部系统
+.\Run-Demo.ps1 -Mode doctor-v04
+.\Run-Demo.ps1 -Mode v04-submission-check
+```
+
 ## 当前状态
 
 已真实验证：
@@ -11,7 +19,7 @@ Arena 将比赛中的作品提交、查询、规则答疑、值班协调和异�
 - WorkBuddy 桌面连接本机工作人员 MCP，真实模型调用 `search_works` 返回 `H-001 / RAG 知识助手`。
 - 用户授权 WorkBuddy 接管原 `test机器人` 后，企业微信私聊完成只读查询；内部详情被服务端身份校验拒绝。
 - 独立五表智能表格沙盒完成登记故障修复、重试去重、排班修改读回和工单生命周期验证。
-- 76 项 `pytest`、`ruff`、`mypy` 及 25/25 确定性服务 Evals 通过。Evals 不调用模型。
+- 本轮 91 项 `pytest`、`ruff`、`mypy` 及 25/25 确定性服务 Evals 通过。Evals 不调用模型；v0.4 新增测试包含验收驱动的离线验证。
 
 尚未完成正式赛时验收：
 

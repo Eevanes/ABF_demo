@@ -2,6 +2,8 @@
 
 本包为 v0.3 草稿，五项 Skill 已按实际 Arena 工具契约编写；Owner/Reviewer 仍需由赛事方指定并审批发布。仓库旧知识属于示例，默认不会作为已发布规则返回。
 
+v0.4 原生候选包见 [native/CAPABILITIES.md](native/CAPABILITIES.md)，包含新的系统提示和五项 Skills。当前原生企业微信连接器在企微 B01 测试中报告文档权限过期，知识和双人隔离也未验收，因此此目录的兼容 Skills 继续保留。不要同时装载两套同名 Skills；原生包验收发布后再按能力逐项切换。真实 Agent 题集见 [26 项用例](../evals/workbuddy_cases.md)。
+
 本机只读联调使用 `./Run-Demo.ps1 -Mode workbuddy-poc`，默认8766端口，自动选择真实智能表格Registry并关闭工作人员/表格写入；配置只影响本进程。`mcp.local.example.json` 是无凭据连接示例。WorkBuddy 首次添加后需用户在界面点击“信任”；保存JSON或显示服务健康都不等于完成真实Agent调用验收。
 
 先运行 `arena serve-staff`（默认本机8766端口，请以 `--help` 为准）。在 WorkBuddy 自定义 MCP 中填写该运行环境能够访问的 `/mcp` 地址。桌面本机可用 localhost；云端须经实际验证的 HTTPS 地址。

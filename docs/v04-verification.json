@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-30",
+  "base_revision": "d7dd392ffe5367f6114391096bad38da3d23a13d",
+  "branch": "codex/arena-v04-native-workbuddy",
+  "scope": "implementation_and_integration_preparation",
+  "local_validation": {
+    "pytest": {"command": "uv run --frozen pytest -q", "passed": 91, "failed": 0},
+    "ruff": {"command": "uv run --frozen ruff check .", "state": "passed"},
+    "mypy": {"command": "uv run --frozen mypy src", "state": "passed", "source_files": 34},
+    "service_evals": {"command": "uv run --frozen python evals/run.py", "passed": 25, "total": 25, "agent_model_called": false},
+    "submission_driver": {
+      "mode": "offline_test_with_local_git_and_explicit_registry_test_double",
+      "transport": "real_localhost_tcp_official_mcp_client",
+      "teams": 2,
+      "versions_each": 2,
+      "registration_outage": "injected",
+      "reconciliation_without_duplicate_commit": "passed",
+      "cloud_submission_acceptance": false
+    },
+    "doctor_v04": "configuration_only_passed",
+    "doctor_v04_live_read_without_sandbox": "skipped_separate_v04_sandbox_required",
+    "submission_dry_run": "passed_no_external_writes",
+    "submission_execute_without_app": "expected_exit_1_github_app_configuration_required_before_external_io"
+  },
+  "real_readonly_observations": {
+    "arena_cli_initial": "original_and_v03_sandbox_returned_893999",
+    "arena_cli_token_refresh": "same_bot_token_saved_only_to_user_environment",
+    "original_table_after_refresh": {"state": "passed", "works_count": 3, "public_work_id_checked": "H-001"},
+    "v03_sandbox_after_refresh": {"state": "passed", "works_count": 1, "schema_sheets": 5},
+    "original_table_modified": false,
+    "existing_sandbox_modified": false,
+    "repository_visibility": "public_confirmed_via_github_connector"
+  },
+  "native_workbuddy_probe": {
+    "case_id": "B01/S01",
+    "route": "test_bot_wecom_private_chat",
+    "queries_sent_by_agent": 1,
+    "reply_observed": true,
+    "state": "query_not_completed",
+    "reported_reason": "native_connector_robot_document_permission_expired",
+    "raw_native_tool_trace_verified": false,
+    "user_clarification": "capability_confirmed_by_user_enterprise_not_enabled_demo_deferred",
+    "native_query_passed": false,
+    "multi_user_isolation": "not_verified"
+  },
+  "external_acceptance_pending": [
+    "workbuddy_enterprise_native_knowledge_and_sheets",
+    "owner_approved_test_documents",
+    "two_independent_wecom_users",
+    "github_app_creation_and_real_artifact_writes",
+    "v04_isolated_cloud_submission_rehearsal",
+    "trusted_sender_and_real_notification_receipts",
+    "feedback_review_release_and_regression",
+    "remote_https_and_three_to_five_person_pilot"
+  ],
+  "candidate_skill_pack_activated": false,
+  "compatibility_tools_removed": false,
+  "production_cutover": false
+}
